@@ -1,0 +1,46 @@
+#!/bin/bash
+TARGET_DIR="${1:-.}"
+
+
+if [ ! -d "$TARGET_DIR" ]; then
+    echo "Ошибка: Директория '$TARGET_DIR' не найдена."
+    exit 1
+fi
+
+pushd "$TARGET_DIR" > /dev/null || exit
+
+cpp_files=(*.cpp)
+
+if [[ ! -e "${cpp_files[0]}" ]]; then
+    echo "В директории '$TARGET_DIR' файлы .cpp не обнаружены."
+    popd > /dev/null
+    exit 0
+fi
+
+count=${#cpp_files[@]}
+echo "--- Автотест запущен в: $TARGET_DIR ---"
+echo "Найдено файлов: $count (${cpp_files[*]})"
+echo "----------------------------------------"
+
+for file in "${cpp_files[@]}"; do
+    exe_name="${file%.cpp}"
+    
+    echo ">> Обработка $file..."
+    
+    # Сборка
+    if g++ "$file" -o "$exe_name"; then
+        chmod +x "$exe_name"
+        
+        echo ">> Запуск $exe_name:"
+        echo "--------------------------"
+        ./"$exe_name"
+        echo -e "\n--------------------------"
+        
+    else
+        echo "!! Ошибка компиляции $file"
+    fi
+    echo ""
+done
+
+popd > /dev/null
+echo "Все тесты завершены."
